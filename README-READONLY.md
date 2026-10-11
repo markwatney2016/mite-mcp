@@ -22,7 +22,7 @@ Alle 11 Tools greifen nur über `apiClient.get` auf die mite-API zu. Die übrige
 | Datei | Änderung |
 |---|---|
 | `src/index.ts` | Das Objekt `allTools` wird über die Whitelist `READ_ONLY_TOOLS` gefiltert. Tool-Liste (`tools/list`) und Tool-Ausführung (`tools/call`) basieren beide auf `allTools`. |
-| `package.json` | name `mite-mcp-readonly`, version `0.1.5-readonly.1`, bin `mite-mcp-readonly`, `build` über `tsconfig.build.json`, `files` = `dist` und `npm-shrinkwrap.json`. Es gibt kein `prepare`-Skript. |
+| `package.json` | name `mite-mcp-readonly`, version `0.1.5-readonly.2`, bin `mite-mcp-readonly`, Build-Skript `compile` (statt `build`) über `tsconfig.build.json`, `files` = `dist` und `npm-shrinkwrap.json`. Es gibt kein `build`- und kein `prepare`-Skript. |
 | `tsconfig.build.json` | Erbt von `tsconfig.json` und schließt zusätzlich `src/__tests__` aus. Die 4 Typfehler dort bestehen upstream und werden nicht behoben. |
 | `.gitignore` | Die Zeile `dist/` ist entfernt. |
 | `dist/` | Wird mitversioniert (Build-Ergebnis). |
@@ -30,6 +30,8 @@ Alle 11 Tools greifen nur über `apiClient.get` auf die mite-API zu. Die übrige
 | `scripts/check-readonly.sh` | Prüfskript, siehe unten. |
 
 Warum `dist/` mitversioniert wird und es kein `prepare`-Skript gibt: Ein `prepare`-Skript würde bei `npm install -g` bauen. Dabei kann ein global installiertes TypeScript 6 verwendet werden, das wegen `moduleResolution: "node"` mit Fehler TS5107 abbricht.
+
+Warum das Build-Skript `compile` heißt und nicht `build`: Bei einer Installation aus git bereitet npm das Paket vor, sobald eines der Skripte `build`, `install`, `preinstall`, `postinstall`, `prepack` oder `prepare` existiert (pacote, `lib/git.js`). Dazu startet npm im temporären Klon ein inneres `npm install`. Bei `npm install -g` erbt es `npm_config_global=true` und installiert den temporären Klon als Link global. npm löscht den Klon danach, zurück bleibt eine defekte Installation. Keines dieser Skripte darf daher in `package.json` stehen.
 
 Warum `npm-shrinkwrap.json`: Bei der Installation als Paket beachtet npm nur eine `npm-shrinkwrap.json`, keine `package-lock.json`, und nur, wenn sie in `files` aufgeführt ist.
 
@@ -40,7 +42,7 @@ Der Branch `main` bleibt unverändert und entspricht upstream. Alle Änderungen 
 Voraussetzungen: git, Node.js ≥ 18, npm.
 
 ```bash
-npm install -g github:markwatney2016/mite-mcp#v0.1.5-readonly.1
+npm install -g github:markwatney2016/mite-mcp#v0.1.5-readonly.2
 ```
 
 Das installiert den Befehl `mite-mcp-readonly` unter `$(npm prefix -g)/bin/`.
@@ -86,14 +88,14 @@ Alle Befehle im Repository-Verzeichnis auf dem Branch `readonly` ausführen.
    ```
    Dabei insbesondere prüfen:
    - **Tools:** neue oder geänderte Tools in `src/tools/` (`name: '...'`) und Änderungen in `src/index.ts`. Wird die Tool-Liste oder die Tool-Ausführung nicht mehr über `allTools` abgewickelt, wirkt die Whitelist womöglich nicht mehr.
-   - **Abhängigkeiten:** `package.json` (dependencies, neue `scripts` wie `preinstall`, `postinstall` oder `prepare`).
+   - **Abhängigkeiten:** `package.json` (dependencies, neue `scripts`). Die Skripte `build`, `install`, `preinstall`, `postinstall`, `prepack` und `prepare` dürfen nach dem Merge nicht in `package.json` stehen, siehe oben.
    - **Netzwerkzugriffe:** `src/utils/api-client.ts` und neue `fetch`- oder `http`-Aufrufe sowie neue Hosts.
    - **Claude-Code-Projektdateien:** `.claude/settings.json`, `.mcp.json`, `CLAUDE.md`. Upstream versioniert eine `.claude/settings.json` mit `enableAllProjectMcpServers: true` und weitreichenden Bash-Freigaben. Sie wirkt, wenn Claude Code in diesem Verzeichnis gestartet wird.
 3. Mergen:
    ```bash
    git merge upstream/main
    ```
-   Konflikte in `package.json` so auflösen, dass name, bin, files und build aus diesem Fork erhalten bleiben. Die Version folgt dem Schema `<upstream-version>-readonly.<n>`.
+   Konflikte in `package.json` so auflösen, dass name, bin, files und das Skript `compile` aus diesem Fork erhalten bleiben und kein `build`-Skript zurückkommt. Die Version folgt dem Schema `<upstream-version>-readonly.<n>`.
 4. Abhängigkeiten installieren:
    ```bash
    npm ci
@@ -101,7 +103,7 @@ Alle Befehle im Repository-Verzeichnis auf dem Branch `readonly` ausführen.
    Haben sich die Abhängigkeiten geändert, stattdessen `npm install` ausführen, damit `npm-shrinkwrap.json` aktualisiert wird. `npm ci` bricht ab, wenn `package.json` und `npm-shrinkwrap.json` nicht zusammenpassen.
 5. Bauen und lokal prüfen:
    ```bash
-   npm run build
+   npm run compile
    scripts/check-readonly.sh "node dist/index.js"
    ```
 6. Committen, taggen und pushen (Beispiel-Tag `v0.1.6-readonly.1`, er muss zur Version in `package.json` passen):
