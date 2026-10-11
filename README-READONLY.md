@@ -22,7 +22,7 @@ Alle 11 Tools greifen nur über `apiClient.get` auf die mite-API zu. Die übrige
 | Datei | Änderung |
 |---|---|
 | `src/index.ts` | Das Objekt `allTools` wird über die Whitelist `READ_ONLY_TOOLS` gefiltert. Tool-Liste (`tools/list`) und Tool-Ausführung (`tools/call`) basieren beide auf `allTools`. |
-| `package.json` | name `mite-mcp-readonly`, version `0.1.5-readonly.2`, bin `mite-mcp-readonly`, Build-Skript `compile` (statt `build`) über `tsconfig.build.json`, `files` = `dist` und `npm-shrinkwrap.json`. Es gibt kein `build`- und kein `prepare`-Skript. |
+| `package.json` | name `mite-mcp-readonly`, version `0.1.5-readonly.3`, bin `mite-mcp-readonly`, Build-Skript `compile` (statt `build`) über `tsconfig.build.json` mit anschließendem `chmod +x dist/index.js`, `files` = `dist` und `npm-shrinkwrap.json`. Es gibt kein `build`- und kein `prepare`-Skript. |
 | `tsconfig.build.json` | Erbt von `tsconfig.json` und schließt zusätzlich `src/__tests__` aus. Die 4 Typfehler dort bestehen upstream und werden nicht behoben. |
 | `.gitignore` | Die Zeile `dist/` ist entfernt. |
 | `dist/` | Wird mitversioniert (Build-Ergebnis). |
@@ -33,6 +33,8 @@ Warum `dist/` mitversioniert wird und es kein `prepare`-Skript gibt: Ein `prepar
 
 Warum das Build-Skript `compile` heißt und nicht `build`: Bei einer Installation aus git bereitet npm das Paket vor, sobald eines der Skripte `build`, `install`, `preinstall`, `postinstall`, `prepack` oder `prepare` existiert (pacote, `lib/git.js`). Dazu startet npm im temporären Klon ein inneres `npm install`. Bei `npm install -g` erbt es `npm_config_global=true` und installiert den temporären Klon als Link global. npm löscht den Klon danach, zurück bleibt eine defekte Installation. Keines dieser Skripte darf daher in `package.json` stehen.
 
+Warum `dist/index.js` ausführbar versioniert wird (Modus `100755`): Beim Entpacken eines Pakets aus git übernimmt npm den Dateimodus aus dem Archiv, setzt das Ausführbar-Bit für Bin-Dateien aber nicht selbst (pacote, `lib/fetcher.js`). Nachträglich setzt npm es nur, wenn es den Link in `$(npm prefix -g)/bin` neu anlegt. Besteht der Link aus der Vorversion schon, überspringt npm diesen Schritt (bin-links, `lib/link-gently.js`). Ohne das Bit im Repository wäre der Befehl nach jedem Update nicht mehr ausführbar. `npm run compile` setzt es deshalb nach jedem Build.
+
 Warum `npm-shrinkwrap.json`: Bei der Installation als Paket beachtet npm nur eine `npm-shrinkwrap.json`, keine `package-lock.json`, und nur, wenn sie in `files` aufgeführt ist.
 
 Der Branch `main` bleibt unverändert und entspricht upstream. Alle Änderungen liegen auf dem Branch `readonly`.
@@ -42,7 +44,7 @@ Der Branch `main` bleibt unverändert und entspricht upstream. Alle Änderungen 
 Voraussetzungen: git, Node.js ≥ 18, npm.
 
 ```bash
-npm install -g github:markwatney2016/mite-mcp#v0.1.5-readonly.2
+npm install -g github:markwatney2016/mite-mcp#v0.1.5-readonly.3
 ```
 
 Das installiert den Befehl `mite-mcp-readonly` unter `$(npm prefix -g)/bin/`.

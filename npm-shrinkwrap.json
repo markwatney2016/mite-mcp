@@ -1,12 +1,12 @@
 {
   "name": "mite-mcp-readonly",
-  "version": "0.1.5-readonly.2",
+  "version": "0.1.5-readonly.3",
   "lockfileVersion": 3,
   "requires": true,
   "packages": {
     "": {
       "name": "mite-mcp-readonly",
-      "version": "0.1.5-readonly.2",
+      "version": "0.1.5-readonly.3",
       "license": "MIT",
       "dependencies": {
         "@modelcontextprotocol/sdk": "^1.15.1",
