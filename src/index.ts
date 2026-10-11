@@ -22,6 +22,21 @@ interface ServerOptions {
   host: string;
 }
 
+// Read-only fork: only these tools are registered, all others are hidden
+const READ_ONLY_TOOLS = new Set([
+  'get_customer',
+  'get_daily_time_entries',
+  'get_project',
+  'get_service',
+  'get_stopwatch_status',
+  'get_time_entry',
+  'get_time_entry_summary',
+  'list_customers',
+  'list_projects',
+  'list_services',
+  'list_time_entries',
+]);
+
 async function setupServer(apiClient: MiteApiClient): Promise<Server> {
   const server = new Server(
     {
@@ -41,13 +56,15 @@ async function setupServer(apiClient: MiteApiClient): Promise<Server> {
   const servicesTools = createServicesTools(apiClient);
   const stopwatchTools = createStopwatchTools(apiClient);
 
-  const allTools = {
-    ...timeEntriesTools,
-    ...customersTools,
-    ...projectsTools,
-    ...servicesTools,
-    ...stopwatchTools,
-  };
+  const allTools = Object.fromEntries(
+    Object.entries({
+      ...timeEntriesTools,
+      ...customersTools,
+      ...projectsTools,
+      ...servicesTools,
+      ...stopwatchTools,
+    }).filter(([, tool]) => READ_ONLY_TOOLS.has(tool.name))
+  );
 
   // Create a mapping from tool names to tool objects
   const toolsByName = new Map<string, (typeof allTools)[keyof typeof allTools]>();
