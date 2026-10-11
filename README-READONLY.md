@@ -108,14 +108,28 @@ Alle Befehle im Repository-Verzeichnis auf dem Branch `readonly` ausführen.
    npm run compile
    scripts/check-readonly.sh "node dist/index.js"
    ```
-6. Committen, taggen und pushen (Beispiel-Tag `v0.1.6-readonly.1`, er muss zur Version in `package.json` passen):
+6. Committen:
    ```bash
    git add -A
    git commit -m "Merge upstream <version> in readonly"
+   ```
+7. Prüfen, ob das committete `dist/` dem Quellcode entspricht. Installiert wird `dist/` so, wie es im Repository liegt, und bei der Installation wird nicht gebaut. Die Prüfung löscht `dist/`, baut es komplett neu und vergleicht das Ergebnis mit dem Commit. Sie erkennt geänderte, fehlende und überzählige Dateien sowie ein fehlendes Ausführbar-Bit:
+   ```bash
+   rm -rf dist && npm run compile
+   if [ -z "$(git status --porcelain -- dist)" ]; then
+     echo "OK: dist/ entspricht dem Quellcode"
+   else
+     git status --short -- dist
+     echo "FEHLER: dist/ weicht vom Commit ab"
+   fi
+   ```
+   Bei FEHLER die Abweichung prüfen, `dist/` neu committen und die Prüfung wiederholen. Erst bei OK taggen.
+8. Taggen und pushen (Beispiel-Tag `v0.1.6-readonly.1`, er muss zur Version in `package.json` passen):
+   ```bash
    git tag v0.1.6-readonly.1
    git push origin readonly --tags
    ```
-7. Global installieren und prüfen:
+9. Global installieren und prüfen:
    ```bash
    npm install -g github:markwatney2016/mite-mcp#v0.1.6-readonly.1
    scripts/check-readonly.sh
